@@ -4,39 +4,33 @@ from PIL import Image, ImageDraw, ImageFont
 import pandas as pd
 import io
 import zipfile
-import os
 
 st.title("🎓 مولد شهادات التقدير")
 
-# Upload certificate template image
 template_file = st.file_uploader("📄 ارفع صورة شهادة التقدير (PNG أو JPG)", type=["png", "jpg", "jpeg"])
-
-# Upload names file
 names_file = st.file_uploader("📋 ارفع ملف الأسماء (TXT أو Excel)", type=["txt", "csv", "xlsx"])
-
-# Font size input
-font_size = st.number_input("🔠 حجم الخط", min_value=10, max_value=100, value=50)
-
-# Position input
+font_size = st.number_input("🔠 حجم الخط", min_value=10, max_value=100, value=60)
 x_pos = st.number_input("📍 الموقع الأفقي لكتابة الاسم (X)", min_value=0, value=520)
 y_pos = st.number_input("📍 الموقع الرأسي لكتابة الاسم (Y)", min_value=0, value=250)
 
-# Generate button
 if st.button("🚀 إنشاء الشهادات"):
-    if not template_file or not names_file:
-        st.error("يرجى رفع صورة الشهادة وملف الأسماء أولاً.")
+    if not template_file:
+        st.error("يرجى رفع صورة الشهادة.")
     else:
         # Read names
-        try:
-            if names_file.name.endswith(".txt"):
-                names = names_file.read().decode("utf-8").splitlines()
-                names = [n.strip() for n in names if n.strip()]
-            else:
-                df = pd.read_excel(names_file) if names_file.name.endswith(".xlsx") else pd.read_csv(names_file)
-                names = df.iloc[:, 0].dropna().astype(str).tolist()
-        except Exception as e:
-            st.error(f"حدث خطأ أثناء قراءة الأسماء: {e}")
-            names = []
+        names = []
+        if names_file:
+            try:
+                if names_file.name.endswith(".txt"):
+                    names = names_file.read().decode("utf-8").splitlines()
+                    names = [n.strip() for n in names if n.strip()]
+                else:
+                    df = pd.read_excel(names_file) if names_file.name.endswith(".xlsx") else pd.read_csv(names_file)
+                    names = df.iloc[:, 0].dropna().astype(str).tolist()
+            except Exception as e:
+                st.error(f"حدث خطأ أثناء قراءة الأسماء: {e}")
+        else:
+            names = ["أحمد علي"]  # default test name if no file uploaded
 
         # Prepare output zip
         zip_buffer = io.BytesIO()
@@ -47,7 +41,10 @@ if st.button("🚀 إنشاء الشهادات"):
                     try:
                         font = ImageFont.truetype("arialbd.ttf", font_size)
                     except:
-                        font = ImageFont.load_default()
+                        try:
+                            font = ImageFont.truetype("DejaVuSans.ttf", font_size)
+                        except:
+                            font = ImageFont.load_default()
 
                     text_width = draw.textlength(name, font=font)
                     draw.text((x_pos - text_width / 2, y_pos), name, font=font, fill="black")
