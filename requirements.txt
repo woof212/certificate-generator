@@ -2,3 +2,5 @@ streamlit
 pandas
 openpyxl
 Pillow
+arabic_reshaper
+python-bidi

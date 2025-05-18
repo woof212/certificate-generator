@@ -4,6 +4,8 @@ from PIL import Image, ImageDraw, ImageFont
 import pandas as pd
 import io
 import zipfile
+import arabic_reshaper
+from bidi.algorithm import get_display
 
 st.title("🎓 مولد شهادات التقدير")
 
@@ -30,12 +32,15 @@ if st.button("🚀 إنشاء الشهادات"):
             except Exception as e:
                 st.error(f"حدث خطأ أثناء قراءة الأسماء: {e}")
         else:
-            names = ["أحمد علي"]  # default test name if no file uploaded
+            names = ["أحمد علي"]
 
         # Prepare output zip
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
             for name in names:
+                reshaped_text = arabic_reshaper.reshape(name)
+                bidi_text = get_display(reshaped_text)
+
                 with Image.open(template_file).convert("RGB") as im:
                     draw = ImageDraw.Draw(im)
                     try:
@@ -46,8 +51,8 @@ if st.button("🚀 إنشاء الشهادات"):
                         except:
                             font = ImageFont.load_default()
 
-                    text_width = draw.textlength(name, font=font)
-                    draw.text((x_pos - text_width / 2, y_pos), name, font=font, fill="black")
+                    text_width = draw.textlength(bidi_text, font=font)
+                    draw.text((x_pos - text_width / 2, y_pos), bidi_text, font=font, fill="black")
 
                     output_img = io.BytesIO()
                     im.save(output_img, format="PNG")
